@@ -75,8 +75,8 @@ app.get("/blogs", authentication, async (req, res) => {
 });
 
 app.get("/myblog",authentication, async (req, res) => {
-  const { email } = req.body;
-  const myblog = await Blogsmodel.find({ email: email });
+  const { userId } = req.body;
+  const myblog = await Blogsmodel.find({ userId: userId });
   res.send(myblog);
 });
 
@@ -88,7 +88,7 @@ app.delete("/myblog",authentication, async (req, res) => {
 });
 
 app.post("/blogs", authentication, async (req, res) => {
-  const { title, category, author, content, image, email } = req.body;
+  const { title, category, author, content, image, userId } = req.body;
 
   console.log(userId);
   const blog = new Blogsmodel({
@@ -97,7 +97,7 @@ app.post("/blogs", authentication, async (req, res) => {
     author,
     content,
     image,
-    email,
+    userId,
   });
   await blog.save();
   res.send("Blog created");
