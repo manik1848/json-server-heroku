@@ -12,7 +12,7 @@ const authentication = (req, res, next) => {
     // console.log(decoded); 
     req.body.email=decoded.email;
     req.body.userId=decoded._id;
-    // console.log(decoded._id);
+    console.log(req.body.userId);
     next();
   });
 };

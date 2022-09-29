@@ -43,7 +43,7 @@ app.post("/login", async (req, res) => {
       return res.send({Message:"Please try again later"});
     }
     if (result) {
-      const token = jwt.sign({ email: user.email, _id: user.id }, "secret");
+      const token = jwt.sign({ email: user.email, _id: user._id }, "secret");
       if (!user) {
         res.send({Message:"Invalid credentials"});
       }
