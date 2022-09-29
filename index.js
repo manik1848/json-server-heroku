@@ -74,13 +74,13 @@ app.get("/blogs", authentication, async (req, res) => {
   }
 });
 
-app.get("/myblog", async (req, res) => {
+app.get("/myblog",authentication, async (req, res) => {
   const { userId } = req.body;
   const myblog = await Blogsmodel.find({ useId: userId });
   res.send(myblog);
 });
 
-app.delete("/myblog", async (req, res) => {
+app.delete("/myblog",authentication, async (req, res) => {
   const { id } = req.query;
   await Blogsmodel.deleteOne({ _id: id });
   const blogs = await Blogsmodel.find();
