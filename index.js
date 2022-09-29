@@ -47,7 +47,7 @@ app.post("/login", async (req, res) => {
       if (!user) {
         res.send({Message:"Invalid credentials"});
       }
-      return res.send({ Message: "Login successful", token: token });
+      return res.send({ Message: "Login successful", token: token,id:user._id });
     } else {
       res.send({Message:"Invalid credentials"});
     }
@@ -75,8 +75,8 @@ app.get("/blogs", authentication, async (req, res) => {
 });
 
 app.get("/myblog",authentication, async (req, res) => {
-  const { userId } = req.body;
-  const myblog = await Blogsmodel.find({ useId: userId });
+  const { email } = req.body;
+  const myblog = await Blogsmodel.find({ email: email });
   res.send(myblog);
 });
 
@@ -88,7 +88,7 @@ app.delete("/myblog",authentication, async (req, res) => {
 });
 
 app.post("/blogs", authentication, async (req, res) => {
-  const { title, category, author, content, image, userId } = req.body;
+  const { title, category, author, content, image, email } = req.body;
 
   console.log(userId);
   const blog = new Blogsmodel({
@@ -97,7 +97,7 @@ app.post("/blogs", authentication, async (req, res) => {
     author,
     content,
     image,
-    userId,
+    email,
   });
   await blog.save();
   res.send("Blog created");
