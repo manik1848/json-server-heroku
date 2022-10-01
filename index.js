@@ -1,33 +1,34 @@
 const express = require("express");
-const app = express();
-const bcrypt = require("bcrypt");
+var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 var cors = require("cors");
-require("dotenv").config();
 
 const { connection } = require("./config/config");
 const Usermodel = require("./models/User.model");
-const Blogsmodel = require("./models/Blogs.model");
-const authentication = require("./middleware/authentication");
+const Studentmodel = require("./models/Students.model");
+const Testmodel = require("./models/Tests.model");
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("Homepage");
 });
-
 app.post("/signup", async (req, res) => {
   const { email, password } = req.body;
   const user = await Usermodel.findOne({ email });
   if (!user) {
-    await bcrypt.hash(password, 8, function (err, hash) {
-      if (err) {
-        return res.send({ Message: "Signup failed, Please try again later" });
-      }
-      const userData = new Usermodel({ email, password: hash });
-      userData.save();
-      return res.send({ Message: "signup succesful" });
+    bcrypt.genSalt(10, function (err, Salt) {
+      bcrypt.hash(password, Salt, function (err, hash) {
+        if (err) {
+          return res.send({ Message: "Signup failed, Please try again later" });
+        }
+        const userData = new Usermodel({ email, password: hash });
+        userData.save();
+        console.log(hash);
+        return res.send({ Message: "signup succesful" });
+      });
     });
   } else {
     return res.send({ Message: "User already exist" });
@@ -37,78 +38,125 @@ app.post("/signup", async (req, res) => {
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const user = await Usermodel.findOne({ email });
+  if (!user) {
+    return res.send({ Message: "Invalid credentials" });
+  }
   const hashed_password = user.password;
-  await bcrypt.compare(password, hashed_password, function (err, result) {
+  bcrypt.compare(password, hashed_password, async function (err, isMatch) {
     if (err) {
-      return res.send({Message:"Please try again later"});
+      return res.send({ Message: "Login Failed, Please try again later" });
     }
-    if (result) {
-      const token = jwt.sign({ email: user.email, _id: user._id }, "secret");
-      if (!user) {
-        res.send({Message:"Invalid credentials"});
-      }
-      return res.send({ Message: "Login successful", token: token,id:user._id });
-    } else {
-      res.send({Message:"Invalid credentials"});
+    if (isMatch) {
+      // const token = jwt.sign({ email: user.email, id: user._id }, "secret");
+      const userName = user.name;
+      console.log(hashed_password, password);
+      return res.send({ Message: "Login successful", Name: userName });
+    }
+
+    if (!isMatch) {
+      return res.send({ Message: "Invalid credentials" });
     }
   });
 });
 
-app.get("/blogs", authentication, async (req, res) => {
-  const cat = req.query.category;
-  const auth = req.query.author;
-  if (cat === "" && auth === "") {
-    const blogs = await Blogsmodel.find();
+app.get("/students", async (req, res) => {
+  const students = await Studentmodel.find();
+  let filter = req.query.gender;
+  let sort = req.query.sortby;
+  // let q = req.query.q;
+  // const student = await Studentmodel.find({ name: `/^${q}/` });
+  // res.send(student);
+  if (filter === "" && sort === "") {
+    const blogs = await Studentmodel.find();
     return res.send(blogs);
-  } else if (cat !== "" && auth === "") {
-    const blogs = await Blogsmodel.find({ category: cat });
+  } else if (filter !== "" && sort === "") {
+    const blogs = await Studentmodel.find({ gender: filter });
     return res.send(blogs);
-  } else if (cat !== "" && auth !== "") {
-    const blogs = await Blogsmodel.find({
-      $and: [{ category: cat }, { author: auth }],
-    });
-    return res.send(blogs);
-  } else if (cat === "" && auth !== "") {
-    const blogs = await Blogsmodel.find({ author: auth });
-    return res.send(blogs);
+  } else if (filter !== "" && sort !== "") {
+    if (sort == "asc") {
+      const blogs = await Studentmodel.find({ gender: filter }).sort({
+        age: 1,
+      });
+      return res.send(blogs);
+    } else if (sort == "desc") {
+      const blogs = await Studentmodel.find({ gender: filter }).sort({
+        age: -1,
+      });
+      return res.send(blogs);
+    }
+  } else if (filter === "" && sort !== "") {
+    if (sort == "asc") {
+      const blogs = await Studentmodel.find().sort({ age: 1 });
+      return res.send(blogs);
+    } else if (sort == "desc") {
+      const blogs = await Studentmodel.find().sort({ age: -1 });
+      return res.send(blogs);
+    }
   }
 });
 
-app.get("/myblog",authentication, async (req, res) => {
-  const { userId } = req.body;
-  const myblog = await Blogsmodel.find({ userId: userId });
-  res.send(myblog);
-});
-
-app.delete("/myblog",authentication, async (req, res) => {
-  const { id } = req.query;
-  await Blogsmodel.deleteOne({ _id: id });
-  const blogs = await Blogsmodel.find();
-  res.send(blogs);
-});
-
-app.post("/blogs", authentication, async (req, res) => {
-  const { title, category, author, content, image, userId } = req.body;
-
-  console.log(userId);
-  const blog = new Blogsmodel({
-    title,
-    category,
-    author,
-    content,
-    image,
-    userId,
+app.post("/students", async (req, res) => {
+  const { name, age, gender } = req.body;
+  let tests = [];
+  const student = new Studentmodel({
+    name,
+    age,
+    gender,
+    tests,
   });
-  await blog.save();
-  res.send("Blog created");
+  await student.save();
+  res.send("Student added");
+});
+
+app.get("/tests/:id", async (req, res) => {
+  const { id } = req.params;
+  const tests = await Testmodel.find({ studentId: id });
+  return res.send({ data: tests });
+});
+
+app.post("/tests/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, subject, mark, date } = req.body;
+  const test = new Testmodel({
+    name,
+    subject,
+    mark,
+    date,
+    studentId: id,
+  });
+  await test.save();
+  await Studentmodel.updateOne(
+    { _id: id },
+    {
+      $push: {
+        tests: {
+          name,
+          subject,
+          mark,
+          date,
+          studentId: id,
+        },
+      },
+    }
+  );
+
+  return res.send({ Message: "Test created" });
+});
+
+app.delete("/tests/:id", async (req, res) => {
+  const { id } = req.params;
+  const { del } = req.query;
+  await Testmodel.deleteOne({ _id: del });
+  const tests = await Testmodel.find({ studentId: id });
+  return res.send(tests);
 });
 
 app.listen(process.env.PORT, async () => {
   try {
     await connection;
-    console.log("connected to db");
+    console.log("Connected to db");
   } catch (err) {
     console.log(err);
   }
-  console.log("port starting at 5000");
+  console.log("Port started at 5000");
 });
