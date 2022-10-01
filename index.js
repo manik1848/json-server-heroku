@@ -113,8 +113,8 @@ app.get("/tests/:id", async (req, res) => {
   return res.send({ data: tests });
 });
 
-app.post("/tests/:id", async (req, res) => {
-  const { id } = req.params;
+app.post("/tests", async (req, res) => {
+  const { id } = req.query;
   const { name, subject, mark, date } = req.body;
   const test = new Testmodel({
     name,
