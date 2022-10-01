@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
   res.send("Homepage");
 });
 app.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
   const user = await Usermodel.findOne({ email });
   if (!user) {
     bcrypt.genSalt(10, function (err, Salt) {
@@ -24,7 +24,7 @@ app.post("/signup", async (req, res) => {
         if (err) {
           return res.send({ Message: "Signup failed, Please try again later" });
         }
-        const userData = new Usermodel({ email, password: hash });
+        const userData = new Usermodel({ email, password: hash, name });
         userData.save();
         console.log(hash);
         return res.send({ Message: "signup succesful" });
