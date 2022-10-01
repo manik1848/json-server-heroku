@@ -2,7 +2,6 @@ const express = require("express");
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 var cors = require("cors");
-const { v4: uuidv4 } = require("uuid");
 const { connection } = require("./config/config");
 const Usermodel = require("./models/User.model");
 const Studentmodel = require("./models/Students.model");
@@ -135,7 +134,6 @@ app.post("/tests/:id", async (req, res) => {
           mark,
           date,
           studentId: id,
-          uuid: uuidv4(),
         },
       },
     }
@@ -147,12 +145,7 @@ app.post("/tests/:id", async (req, res) => {
 app.delete("/tests/:id", async (req, res) => {
   const { id } = req.params;
   const { del } = req.query;
-  const { q } = req.query;
   await Testmodel.deleteOne({ _id: del });
-  await Studentmodel.updateOne(
-    { _id: id },
-    { $pull: { tests: { uuid: q } } }
-  );
   const tests = await Testmodel.find({ studentId: id });
   return res.send(tests);
 });
