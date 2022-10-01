@@ -67,8 +67,8 @@ app.get("/students", async (req, res) => {
   // const student = await Studentmodel.find({ name: `/^${q}/` });
   // res.send(student);
   if (filter === "" && sort === "") {
-    const blogs = await Studentmodel.find();
-    return res.send(blogs);
+    const students = await Studentmodel.find();
+    return res.send(students);
   } else if (filter !== "" && sort === "") {
     const blogs = await Studentmodel.find({ gender: filter });
     return res.send(blogs);
@@ -147,6 +147,7 @@ app.delete("/tests/:id", async (req, res) => {
   const { id } = req.params;
   const { del } = req.query;
   await Testmodel.deleteOne({ _id: del });
+  await Studentmodel.updateOne({ _id: id }, { $pull: { tests: { _id: del } } });
   const tests = await Testmodel.find({ studentId: id });
   return res.send(tests);
 });
