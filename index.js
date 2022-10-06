@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
   res.send("Homepage");
 });
 
-app.get("/", async (req, res) => {
+app.get("/quiz", async (req, res) => {
   const { category, level, ques } = req.query;
   var data = await Quesmodel.find({ category: category, difficulty: level });
   if (ques !== "") {
